@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mon CA — MUSATTI · Importalux</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#EDF1F7;
+  color:#1a2a3a;font-size:14px;-webkit-font-smoothing:antialiased}
+
+/* ── HEADER ── */
+.hdr{background:linear-gradient(135deg,#0F1F2E 0%,#1a5276 60%,#B7950B 100%);
+  color:#fff;padding:20px 20px 16px}
+.hdr-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.avatar{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  font-weight:800;flex-shrink:0;border:2px solid rgba(255,255,255,.3)}
+.hdr-name{font-size:22px;font-weight:800;letter-spacing:.3px}
+.hdr-sub{font-size:12px;opacity:.75;margin-top:3px}
+.update-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 12px;
+  font-size:11px;white-space:nowrap}
+.update-dot{width:7px;height:7px;border-radius:50%;background:#2ECC71;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── SAISONS TABS ── */
+.season-bar{display:flex;gap:0;background:rgba(0,0,0,.2);border-radius:8px;
+  padding:3px;margin-top:10px;width:fit-content}
+.season-tab{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:700;
+  cursor:default;opacity:.55;letter-spacing:.3px;text-transform:uppercase}
+.season-tab.active{background:rgba(255,255,255,.2);opacity:1}
+
+/* ── KPI GRID ── */
+.main{max-width:1200px;margin:0 auto;padding:16px 14px}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:540px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kc{background:#fff;border-radius:14px;padding:14px 16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);border-top:4px solid #2E75B6;
+  position:relative;overflow:hidden}
+.kc::after{content:'';position:absolute;right:-10px;top:-10px;
+  width:60px;height:60px;border-radius:50%;background:currentColor;opacity:.04}
+.kc-icon{position:absolute;right:12px;top:12px;font-size:22px;opacity:.12}
+.kc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.8px;color:#7F8C8D;margin-bottom:6px}
+.kc-amt{font-size:18px;font-weight:800;letter-spacing:-.3px;line-height:1.1}
+.kc-sub{font-size:11px;color:#999;margin-top:4px}
+.kc-evol{font-size:13px;font-weight:700;margin-top:6px}
+
+/* ── SECTIONS ── */
+.section-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.4px;
+  color:#6B7E99;margin:16px 0 10px;display:flex;align-items:center;gap:8px}
+.section-lbl::after{content:'';flex:1;height:1px;background:#D5DFE8}
+.card{background:#fff;border-radius:14px;padding:18px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:14px}
+
+/* ── TABLEAU ── */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#1a2a3a;color:#fff;padding:5px 7px;text-align:right;
+  font-size:10px;font-weight:700;white-space:nowrap}
+th.th-left{text-align:left}
+th.th-sort{cursor:pointer;user-select:none}
+th.th-sort:hover{background:#2E4A6A}
+th.th-sort .si{font-size:9px;opacity:.4;margin-left:3px}
+th.th-sort.asc .si::after{content:'▲';opacity:1;color:#7EC8F8}
+th.th-sort.desc .si::after{content:'▼';opacity:1;color:#7EC8F8}
+th.th-sort.asc .si, th.th-sort.desc .si{opacity:1}
+td{padding:5px 7px;border-bottom:1px solid #EAF0F7;text-align:right;vertical-align:middle}
+td.td-code{font-family:monospace;font-size:10.5px;text-align:left;color:#6B7E99}
+td.td-name{text-align:left;font-weight:600;max-width:120px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.td-ville{text-align:left;max-width:90px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;color:#444}
+td.td-proj{font-weight:800;background:#FFFBF0}
+tr:nth-child(even) td{background:#F8FBFF}
+tr:hover td{background:#EDF4FF!important}
+tr.tf td{background:#1a2a3a;color:#fff;font-weight:700;border:none}
+
+/* ── BARRES ── */
+.pbar-wrap{display:inline-block;width:55px;background:#EAF0F7;
+  border-radius:3px;height:6px;vertical-align:middle;margin-right:5px}
+.pbar-fill{height:6px;border-radius:3px;transition:width .3s}
+.pbar-pct{font-size:11px;color:#888}
+
+/* ── FOOTER ── */
+.footer{text-align:center;color:#B0B8C4;font-size:11px;padding:16px;
+  border-top:1px solid #DDE4ED;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="avatar">MU</div>
+    <div style="flex:1">
+      <div class="hdr-name">MUSATTI</div>
+      <div class="hdr-sub">Mon tableau de bord commercial · Importalux</div>
+    </div>
+    <div class="update-badge">
+      <span class="update-dot"></span>
+      Mis à jour<br>26/06/2026 à 08:00
+    </div>
+  </div>
+  <div class="season-bar">
+    <div class="season-tab active">Saison 2025/2026</div>
+    <div class="season-tab">vs Saison 2024/2025</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- KPI -->
+  <div class="section-lbl">Vue d'ensemble — Saison 2025/2026</div>
+  <div class="kpi-grid">
+
+    <div class="kc" style="border-color:#B7950B;
+      background:linear-gradient(135deg,#0F1F2E,#B7950B);color:#fff">
+      <span class="kc-icon">✅</span>
+      <div class="kc-lbl" style="color:rgba(255,255,255,.7)">CA Facturé N</div>
+      <div class="kc-amt">27 888 €</div>
+      <div class="kc-sub" style="color:rgba(255,255,255,.6)">11 clients · 19 factures</div>
+    </div>
+
+    <div class="kc" style="border-color:#E67E22">
+      <span class="kc-icon">📋</span>
+      <div class="kc-lbl" style="color:#E67E22">BDC en cours</div>
+      <div class="kc-amt" style="color:#E67E22">0 €</div>
+      <div class="kc-sub">0 clients · 0 commandes</div>
+    </div>
+
+    <div class="kc" style="border-color:#9B59B6">
+      <span class="kc-icon">🎯</span>
+      <div class="kc-lbl" style="color:#9B59B6">CA Projeté N</div>
+      <div class="kc-amt" style="color:#9B59B6">27 888 €</div>
+      <div class="kc-sub">Facturé + BDC</div>
+    </div>
+
+    <div class="kc" style="border-color:#95A5A6">
+      <span class="kc-icon">📉</span>
+      <div class="kc-lbl">CA Saison 2024/2025</div>
+      <div class="kc-amt" style="color:#555">31 497 €</div>
+      <div class="kc-sub">Saison précédente</div>
+    </div>
+
+    <div class="kc" style="border-color:#C0392B;grid-column:span 2">
+      <span class="kc-icon">📊</span>
+      <div class="kc-lbl">Évolution projetée</div>
+      <div class="kc-amt" style="color:#C0392B">
+        ▼ 11.5 %
+      </div>
+      <div class="kc-sub">Projeté Saison 2025/2026 vs Facturé Saison 2024/2025</div>
+    </div>
+
+  </div>
+
+  <!-- GRAPHIQUE -->
+  <div class="section-lbl">CA mensuel</div>
+  <div class="card">
+    <canvas id="chartMensuel" height="120"></canvas>
+  </div>
+
+  <!-- TABLEAU CLIENTS -->
+  <div class="section-lbl">Mes clients</div>
+  <div class="card">
+    <div style="margin-bottom:10px;font-size:11px;color:#888">
+      Cliquez sur un en-tête de colonne pour trier &nbsp;·&nbsp;
+      <span style="color:#E67E22">■</span> BDC = commandes en cours non encore facturées
+    </div>
+    <div class="tbl-wrap">
+    <table id="tblClients">
+      <thead><tr>
+        <th class="th-left th-sort" onclick="sortTable('tblClients',0,'str',this)">Code <span class="si">⇅</span></th>
+        <th class="th-left th-sort" onclick="sortTable('tblClients',1,'str',this)">Client <span class="si">⇅</span></th>
+        <th class="th-sort" onclick="sortTable('tblClients',2,'str',this)">Dpt <span class="si">⇅</span></th>
+        <th class="th-left th-sort" onclick="sortTable('tblClients',3,'str',this)">Ville <span class="si">⇅</span></th>
+        <th class="th-sort" onclick="sortTable('tblClients',4,'num',this)">CA Facturé N <span class="si">⇅</span></th>
+        <th class="th-sort" style="color:#E67E22" onclick="sortTable('tblClients',5,'num',this)">BDC en cours <span class="si">⇅</span></th>
+        <th class="th-sort" style="background:#E67E2233" onclick="sortTable('tblClients',6,'num',this)">CA Projeté N <span class="si">⇅</span></th>
+        <th class="th-sort" onclick="sortTable('tblClients',7,'num',this)">Saison 2024/2025 <span class="si">⇅</span></th>
+        <th class="th-sort" onclick="sortTable('tblClients',8,'num',this)">Évolution <span class="si">⇅</span></th>
+        <th class="th-left th-sort" onclick="sortTable('tblClients',9,'num',this)">Part <span class="si">⇅</span></th>
+      </tr></thead>
+      <tbody><tr><td data-val="5052" class="td-code">5052</td><td data-val="GM ALSACE" class="td-name">GM ALSACE</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Herrlisheim Pres Colmar" class="td-ville">Herrlisheim Pres Colmar</td><td data-val="6862.889999999999">6 863 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="6862.889999999999" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="24.61"><div class="pbar-wrap"><div class="pbar-fill" style="width:24.6%;background:#B7950B"></div></div><span class="pbar-pct">24.6%</span></td></tr>
+<tr><td data-val="4680" class="td-code">4680</td><td data-val="ASSOCIATION DE L'ECOMUSEE D'ALSACE" class="td-name">ASSOCIATION DE L'ECOMUSEE D'ALSACE</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Ungersheim" class="td-ville">Ungersheim</td><td data-val="3535.4">3 535 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3535.4" style="color:#bbb;font-size:11px">—</td><td data-val="1589.6000000000001" style="color:#888">1 590 €</td><td data-val="122.41" style="color:#27AE60;font-weight:700">▲ 122.4 %</td><td data-val="12.68"><div class="pbar-wrap"><div class="pbar-fill" style="width:12.7%;background:#B7950B"></div></div><span class="pbar-pct">12.7%</span></td></tr>
+<tr><td data-val="4748" class="td-code">4748</td><td data-val="SARL LE CHALET DU LAC" class="td-name">SARL LE CHALET DU LAC</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Orbey" class="td-ville">Orbey</td><td data-val="3411.2">3 411 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3411.2" style="color:#bbb;font-size:11px">—</td><td data-val="5743.0" style="color:#888">5 743 €</td><td data-val="-40.60" style="color:#C0392B;font-weight:700">▼ 40.6 %</td><td data-val="12.23"><div class="pbar-wrap"><div class="pbar-fill" style="width:12.2%;background:#B7950B"></div></div><span class="pbar-pct">12.2%</span></td></tr>
+<tr><td data-val="4671" class="td-code">4671</td><td data-val="AUX MERVEILLES DE LA CATHEDRALE SA" class="td-name">AUX MERVEILLES DE LA CATHEDRALE SA</td><td data-val="67" class="td-code" style="text-align:center">67</td><td data-val="Strasbourg" class="td-ville">Strasbourg</td><td data-val="3314.6">3 315 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3314.6" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="11.89"><div class="pbar-wrap"><div class="pbar-fill" style="width:11.9%;background:#B7950B"></div></div><span class="pbar-pct">11.9%</span></td></tr>
+<tr><td data-val="4700" class="td-code">4700</td><td data-val="GRAND MAGASIN DIETRICH SA" class="td-name">GRAND MAGASIN DIETRICH SA</td><td data-val="67" class="td-code" style="text-align:center">67</td><td data-val="Obernai Cedex" class="td-ville">Obernai Cedex</td><td data-val="3067.9">3 068 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3067.9" style="color:#bbb;font-size:11px">—</td><td data-val="3930.8" style="color:#888">3 931 €</td><td data-val="-21.95" style="color:#C0392B;font-weight:700">▼ 22.0 %</td><td data-val="11.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:11.0%;background:#B7950B"></div></div><span class="pbar-pct">11.0%</span></td></tr>
+<tr><td data-val="4701" class="td-code">4701</td><td data-val="POTERIE DU TERROIR" class="td-name">POTERIE DU TERROIR</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Ribeauville" class="td-ville">Ribeauville</td><td data-val="2186.6">2 187 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="2186.6" style="color:#bbb;font-size:11px">—</td><td data-val="3316.9" style="color:#888">3 317 €</td><td data-val="-34.08" style="color:#C0392B;font-weight:700">▼ 34.1 %</td><td data-val="7.84"><div class="pbar-wrap"><div class="pbar-fill" style="width:7.8%;background:#B7950B"></div></div><span class="pbar-pct">7.8%</span></td></tr>
+<tr><td data-val="4800" class="td-code">4800</td><td data-val="SARL LGDR - LA BELLE ALSACE " class="td-name">SARL LGDR - LA BELLE ALSACE </td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Colmar" class="td-ville">Colmar</td><td data-val="1632.0">1 632 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1632.0" style="color:#bbb;font-size:11px">—</td><td data-val="1539.0" style="color:#888">1 539 €</td><td data-val="6.04" style="color:#27AE60;font-weight:700">▲ 6.0 %</td><td data-val="5.85"><div class="pbar-wrap"><div class="pbar-fill" style="width:5.9%;background:#B7950B"></div></div><span class="pbar-pct">5.9%</span></td></tr>
+<tr><td data-val="4908" class="td-code">4908</td><td data-val="TABAC OBRECHT" class="td-name">TABAC OBRECHT</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Colmar" class="td-ville">Colmar</td><td data-val="1601.08">1 601 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1601.08" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="5.74"><div class="pbar-wrap"><div class="pbar-fill" style="width:5.7%;background:#B7950B"></div></div><span class="pbar-pct">5.7%</span></td></tr>
+<tr><td data-val="4805" class="td-code">4805</td><td data-val="SARL CATHEDRALE BELLE ALSACE" class="td-name">SARL CATHEDRALE BELLE ALSACE</td><td data-val="67" class="td-code" style="text-align:center">67</td><td data-val="Strasbourg" class="td-ville">Strasbourg</td><td data-val="1019.6">1 020 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1019.6" style="color:#bbb;font-size:11px">—</td><td data-val="740.4" style="color:#888">740 €</td><td data-val="37.71" style="color:#27AE60;font-weight:700">▲ 37.7 %</td><td data-val="3.66"><div class="pbar-wrap"><div class="pbar-fill" style="width:3.7%;background:#B7950B"></div></div><span class="pbar-pct">3.7%</span></td></tr>
+<tr><td data-val="4790" class="td-code">4790</td><td data-val="LA VUE DES ALPES" class="td-name">LA VUE DES ALPES</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Willers Sur Thur" class="td-ville">Willers Sur Thur</td><td data-val="893.0">893 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="893.0" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="3.20"><div class="pbar-wrap"><div class="pbar-fill" style="width:3.2%;background:#B7950B"></div></div><span class="pbar-pct">3.2%</span></td></tr>
+<tr><td data-val="5092" class="td-code">5092</td><td data-val="SOCIETE TOURISTIQUE DE LA VALLEE DE LA ZORN ET DU TEIGELBACH" class="td-name">SOCIETE TOURISTIQUE DE LA VALLEE DE LA ZORN ET DU TEIGELBACH</td><td data-val="57" class="td-code" style="text-align:center">57</td><td data-val="Saint Louis" class="td-ville">Saint Louis</td><td data-val="363.4">363 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="363.4" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="1.30"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.3%;background:#B7950B"></div></div><span class="pbar-pct">1.3%</span></td></tr>
+<tr><td data-val="4885" class="td-code">4885</td><td data-val="POTERIE DU TERROIR" class="td-name">POTERIE DU TERROIR</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Eguisheim" class="td-ville">Eguisheim</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="840.16" style="color:#888">840 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#B7950B"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="4863" class="td-code">4863</td><td data-val="SARL ARTAL SOUVENIRS" class="td-name">SARL ARTAL SOUVENIRS</td><td data-val="67" class="td-code" style="text-align:center">67</td><td data-val="Strasbourg" class="td-ville">Strasbourg</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="3383.7999999999997" style="color:#888">3 384 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#B7950B"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="4924" class="td-code">4924</td><td data-val="LCDM - CHALET DES PELUCHES" class="td-name">LCDM - CHALET DES PELUCHES</td><td data-val="88" class="td-code" style="text-align:center">88</td><td data-val="Gerardmer" class="td-ville">Gerardmer</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="3255.7" style="color:#888">3 256 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#B7950B"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="4961" class="td-code">4961</td><td data-val="AU COEUR DE L'ALSACE - SARL CONTE DE FEE" class="td-name">AU COEUR DE L'ALSACE - SARL CONTE DE FEE</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Colmar" class="td-ville">Colmar</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="3555.4" style="color:#888">3 555 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#B7950B"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="4964" class="td-code">4964</td><td data-val="LE CARROUSEL DES SOUVENIRS" class="td-name">LE CARROUSEL DES SOUVENIRS</td><td data-val="88" class="td-code" style="text-align:center">88</td><td data-val="Gerardmer" class="td-ville">Gerardmer</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="709.2" style="color:#888">709 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#B7950B"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="5007" class="td-code">5007</td><td data-val="SAS LE CARROUSEL DES SOUVENIRS" class="td-name">SAS LE CARROUSEL DES SOUVENIRS</td><td data-val="88" class="td-code" style="text-align:center">88</td><td data-val="Epinal" class="td-ville">Epinal</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="547.2" style="color:#888">547 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#B7950B"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="4675" class="td-code">4675</td><td data-val="SAS SLALOM LABELLEMONTAGNE - LE TETRAS" class="td-name">SAS SLALOM LABELLEMONTAGNE - LE TETRAS</td><td data-val="88" class="td-code" style="text-align:center">88</td><td data-val="La Bresse" class="td-ville">La Bresse</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="1652.4" style="color:#888">1 652 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#B7950B"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="4634" class="td-code">4634</td><td data-val="MODERALTO SARL" class="td-name">MODERALTO SARL</td><td data-val="68" class="td-code" style="text-align:center">68</td><td data-val="Turckheim" class="td-ville">Turckheim</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="693.4" style="color:#888">693 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#B7950B"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+</tbody>
+      <tfoot><tr class="tf">
+        <td colspan="4" style="text-align:left">TOTAL</td>
+        <td>27 888 €</td>
+        <td>—</td>
+        <td>27 888 €</td>
+        <td>31 497 €</td>
+        <td style="color:#F1948A">
+          ▼ 11.5 %</td>
+        <td></td>
+      </tr></tfoot>
+    </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <strong>Importalux</strong> &nbsp;·&nbsp;
+  CA HT hors frais de port &nbsp;·&nbsp;
+  Avoirs exclus &nbsp;·&nbsp;
+  Généré le 26/06/2026 à 08:00
+</div>
+
+<script>
+// ── Graphique mensuel ──
+new Chart(document.getElementById('chartMensuel'),{
+  type:'bar',
+  data:{
+    labels:["Sep", "Oct", "Nov", "D\u00e9c", "Jan", "F\u00e9v", "Mar", "Avr", "Mai", "Jun", "Jul", "Ao\u00fb"],
+    datasets:[
+      {label:'BDC en cours',
+        data:[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        backgroundColor:'#E67E22CC',borderRadius:5,stack:'N'},
+      {label:'Facturé Saison 2025/2026',
+        data:[1380.6, 0.0, 7900.59, 1714.0, 0.0, 1514.2, 1019.6, 2801.0, 8489.78, 3067.9, 0.0, 0.0],
+        backgroundColor:'#B7950BCC',borderRadius:5,stack:'N'},
+      {label:'Facturé Saison 2024/2025',
+        data:[2162.7, 6085.5, 1731.0, 1212.4, 1739.3, 1652.4, 974.6, 3303.36, 6043.3, 2353.8, 2275.4, 1963.2],
+        backgroundColor:'#95A5A655',borderColor:'#95A5A6',
+        borderWidth:1,borderRadius:5,stack:'N1'}
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{position:'bottom',labels:{font:{size:12},padding:16,usePointStyle:true}},
+      tooltip:{callbacks:{
+        label:c=>' '+c.dataset.label+' : '+
+          new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',
+            maximumFractionDigits:0}).format(c.parsed.y),
+        footer:items=>'Total : '+
+          new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',
+            maximumFractionDigits:0}).format(items.reduce((s,i)=>s+i.parsed.y,0))
+      }}
+    },
+    scales:{
+      x:{stacked:true,grid:{display:false},ticks:{font:{size:12}}},
+      y:{stacked:true,grid:{color:'#EAF0F7'},
+        ticks:{font:{size:12},callback:v=>
+          new Intl.NumberFormat('fr-FR',{notation:'compact',
+            maximumFractionDigits:0}).format(v)+' €'
+        }
+      }
+    }
+  }
+});
+
+// ── Tri tableau ──
+function sortTable(tableId, colIdx, type, thEl) {
+  var tbl   = document.getElementById(tableId);
+  var tbody = tbl.querySelector('tbody');
+  var rows  = Array.from(tbody.querySelectorAll('tr'));
+  var asc   = !thEl.classList.contains('asc');
+  tbl.querySelectorAll('th.th-sort').forEach(h => h.classList.remove('asc','desc'));
+  thEl.classList.add(asc ? 'asc' : 'desc');
+  rows.sort((a,b) => {
+    var va = a.cells[colIdx].dataset.val ?? a.cells[colIdx].innerText.trim();
+    var vb = b.cells[colIdx].dataset.val ?? b.cells[colIdx].innerText.trim();
+    if (type==='num') {
+      return asc ? parseFloat(va)||0 - (parseFloat(vb)||0)
+                 : parseFloat(vb)||0 - (parseFloat(va)||0);
+    }
+    return asc ? va.localeCompare(vb,'fr') : vb.localeCompare(va,'fr');
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+</script>
+</body>
+</html>
